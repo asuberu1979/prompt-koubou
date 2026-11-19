@@ -185,9 +185,11 @@
         <h1>プロンプト工房</h1>
         <p>日本語の単語チップを選ぶだけで、画像生成AI向けの英語プロンプトが組み上がります。出力形式は Niji・Midjourney・Stable Diffusion・Bing Image Creator・ハイブリッドの5種類。選んだ単語は並び替えでき、その順番がそのまま出力に反映されます。</p>
         <div class="top-links">
-          <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener">単語のリクエスト（GitHub Issues）</a>
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSf31G_Kbil7fL29Y0RjelZ2FvtNC0A_wctwbEfO-BNSYq4VtA/viewform" target="_blank" rel="noopener">単語のリクエスト（フォーム）</a>
           <button type="button" id="dlWords">語彙データ words.json をダウンロード</button>
+          <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener" style="font-size:.8rem;padding:4px 10px;">GitHub Issues（詳しい人向け）</a>
         </div>
+        <p class="vocab-status" style="margin-top:6px;">単語のリクエストは、Googleフォームからログイン不要で送れます。</p>
         <p class="vocab-status" id="vocabStatus">語彙データを読み込んでいます…</p>
       </header>
 
@@ -306,7 +308,8 @@
         <section class="panel" aria-labelledby="h-grow">
           <h2 id="h-grow">この工房の育て方</h2>
           <p>語彙は <strong>words.json</strong> という1つのファイルで管理しています。このファイルを差し替えるだけで、単語の追加・修正がそのまま反映される仕組みです。</p>
-          <p>「こんな単語がほしい」という要望は <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener">GitHub Issues</a> で受け付けています。採用された単語は words.json の更新として公開版に反映されます。</p>
+          <p>「こんな単語がほしい」という要望は <a href="https://docs.google.com/forms/d/e/1FAIpQLSf31G_Kbil7fL29Y0RjelZ2FvtNC0A_wctwbEfO-BNSYq4VtA/viewform" target="_blank" rel="noopener">単語のリクエスト（フォーム）</a> で受け付けています。ログイン不要で送れます。採用された単語は words.json の更新として公開版に反映されます。</p>
+          <p style="font-size:.8rem;">GitHubに慣れている方は <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener">GitHub Issues</a> からもどうぞ。</p>
           <p>プリセットはお使いのブラウザの中だけに保存され、サーバーには送信されません。</p>
         </section>
       </footer>

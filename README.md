@@ -12,7 +12,8 @@
 
 ## 単語のリクエスト
 
-追加してほしい単語があれば、[Issues](https://github.com/asuberu1979/prompt-koubou/issues) からお気軽にどうぞ。週1回の見回りで確認し、汎用的なものから順次追加します。
+追加してほしい単語があれば、[リクエストフォーム](https://docs.google.com/forms/d/e/1FAIpQLSf31G_Kbil7fL29Y0RjelZ2FvtNC0A_wctwbEfO-BNSYq4VtA/viewform) からお気軽にどうぞ。ログイン不要で送れます。週1回の見回りで確認し、汎用的なものから順次追加します。
+GitHubに慣れた方は [Issues](https://github.com/asuberu1979/prompt-koubou/issues) からでも構いません。
 
 ## 仕組み
 
