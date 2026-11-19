@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>プロンプト工房</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #eceae6;
+        --panel: #ffffff;
+        --panel-2: #f6f4f0;
+        --ink: #23211d;
+        --ink-soft: #5c574d;
+        --line: #d8d3c8;
+        --accent: #b3402a;
+        --accent-ink: #ffffff;
+        --accent-soft: #f7e3dd;
+        --chip: #f1eee8;
+        --chip-line: #d8d3c8;
+        --code-bg: #26241f;
+        --code-ink: #f2ede2;
+        --ok: #2e7d4f;
+        --shadow: 0 1px 3px rgba(35, 33, 29, .10);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #171614;
+          --panel: #22211e;
+          --panel-2: #2a2925;
+          --ink: #ece7db;
+          --ink-soft: #a89f8f;
+          --line: #3d3a34;
+          --accent: #e0684c;
+          --accent-ink: #1c0f0b;
+          --accent-soft: #3d2620;
+          --chip: #2a2925;
+          --chip-line: #454138;
+          --code-bg: #100f0d;
+          --code-ink: #efe9db;
+          --shadow: 0 1px 3px rgba(0,0,0,.4);
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+        line-height: 1.6;
+      }
+      button, select, input, textarea { font: inherit; color: inherit; }
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      a { color: var(--accent); }
+
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 64px; }
+
+      header.top { margin-bottom: 18px; }
+      header.top h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: .04em; }
+      header.top p { margin: 0; color: var(--ink-soft); font-size: .95rem; max-width: 46em; }
+      .top-links { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+      .top-links a, .top-links button {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+        padding: 6px 14px; font-size: .9rem; text-decoration: none; color: var(--ink);
+        cursor: pointer; box-shadow: var(--shadow);
+      }
+      .top-links a:hover, .top-links button:hover { border-color: var(--accent); }
+      .vocab-status { margin-top: 8px; font-size: .82rem; color: var(--ink-soft); }
+
+      .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
+      @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+      .panel {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+        box-shadow: var(--shadow); padding: 16px;
+      }
+      .panel + .panel { margin-top: 16px; }
+      .panel h2 { font-size: 1.02rem; margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; }
+      .panel h2 .count { font-size: .8rem; color: var(--ink-soft); font-weight: normal; }
+
+      /* engine tabs */
+      .engines { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+      .engines button {
+        border: 1px solid var(--chip-line); background: var(--chip); border-radius: 999px;
+        padding: 4px 16px; cursor: pointer; font-size: .92rem;
+      }
+      .engines button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .engine-note { font-size: .85rem; color: var(--ink-soft); margin: 0 0 12px; }
+
+      .field { margin-bottom: 12px; }
+      .field label { display: block; font-size: .85rem; font-weight: 700; margin-bottom: 4px; }
+      .field input[type="text"], .field textarea, .field select {
+        width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+        border-radius: 6px; padding: 8px 10px;
+      }
+      .field textarea { min-height: 64px; resize: vertical; }
+      .field .hint { font-size: .78rem; color: var(--ink-soft); margin-top: 3px; }
+      .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+      input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+      /* output */
+      .output-box {
+        background: var(--code-bg); color: var(--code-ink); border-radius: 8px;
+        padding: 12px 14px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: .88rem; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+        min-height: 96px;
+      }
+      .output-box .empty { opacity: .55; font-family: inherit; }
+      .output-label { font-size: .8rem; font-weight: 700; margin: 12px 0 5px; color: var(--ink-soft); }
+      .output-label:first-of-type { margin-top: 0; }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+      .btn {
+        border: 1px solid var(--chip-line); background: var(--chip); border-radius: 6px;
+        padding: 6px 14px; cursor: pointer; font-size: .9rem;
+      }
+      .btn:hover { border-color: var(--accent); }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .btn.small { padding: 2px 10px; font-size: .82rem; min-height: 2rem; }
+      .copied { color: var(--ok); font-size: .85rem; align-self: center; min-width: 4em; }
+
+      /* selected list */
+      .sel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+      .sel-list li {
+        display: flex; align-items: center; gap: 6px; background: var(--panel-2);
+        border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px 4px 12px;
+      }
+      .sel-list .ja { font-weight: 700; font-size: .9rem; }
+      .sel-list .en { color: var(--ink-soft); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+      .sel-list .cat { font-size: .72rem; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+      .icon-btn {
+        border: 1px solid var(--chip-line); background: var(--panel); border-radius: 5px;
+        width: 36px; height: 36px; min-height: 36px; cursor: pointer; font-size: .95rem; line-height: 1; flex: none;
+      }
+      .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .sel-empty { color: var(--ink-soft); font-size: .9rem; margin: 0; }
+
+      /* categories & chips */
+      .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+      .toolbar input[type="search"] {
+        flex: 1; min-width: 180px; background: var(--panel-2); border: 1px solid var(--line);
+        border-radius: 6px; padding: 8px 10px;
+      }
+      details.cat { border-top: 1px solid var(--line); padding: 10px 0 4px; }
+      details.cat:first-of-type { border-top: none; }
+      details.cat summary { cursor: pointer; font-weight: 700; font-size: .95rem; padding: 4px 0; }
+      details.cat summary .n { color: var(--ink-soft); font-weight: normal; font-size: .8rem; margin-left: 6px; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 10px; }
+      .chip {
+        border: 1px solid var(--chip-line); background: var(--chip); border-radius: 999px;
+        padding: 5px 13px; cursor: pointer; font-size: .88rem; min-height: 2.25rem;
+      }
+      .chip:hover { border-color: var(--accent); }
+      .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .chip .en { display: block; font-size: .68rem; opacity: .75; font-weight: normal; line-height: 1.3; }
+      .no-hit { color: var(--ink-soft); font-size: .9rem; padding: 8px 0; display: none; }
+
+      /* presets */
+      .preset-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+      .preset-list li { display: flex; align-items: center; gap: 6px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px 4px 12px; }
+      .preset-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; font-weight: 700; }
+      .preset-list .meta { font-size: .75rem; color: var(--ink-soft); white-space: nowrap; }
+
+      /* compare */
+      .compare-item { border-top: 1px solid var(--line); padding: 12px 0; }
+      .compare-item:first-of-type { border-top: none; }
+      .compare-item h3 { margin: 0 0 6px; font-size: .92rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+      footer.note { margin-top: 22px; color: var(--ink-soft); font-size: .85rem; }
+      footer.note .panel { color: var(--ink); }
+      footer.note h2 { color: var(--ink); }
+      footer.note p { margin: 6px 0; }
+
+      .sticky { position: sticky; top: 14px; }
+      @media (max-width: 900px) { .sticky { position: static; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <h1>プロンプト工房</h1>
+        <p>日本語の単語チップを選ぶだけで、画像生成AI向けの英語プロンプトが組み上がります。出力形式は Niji・Midjourney・Stable Diffusion・Bing Image Creator・ハイブリッドの5種類。選んだ単語は並び替えでき、その順番がそのまま出力に反映されます。</p>
+        <div class="top-links">
+          <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener">単語のリクエスト（GitHub Issues）</a>
+          <button type="button" id="dlWords">語彙データ words.json をダウンロード</button>
+        </div>
+        <p class="vocab-status" id="vocabStatus">語彙データを読み込んでいます…</p>
+      </header>
+
+      <div class="layout">
+        <div>
+          <section class="panel" aria-labelledby="h-words">
+            <h2 id="h-words">単語を選ぶ <span class="count" id="wordCount"></span></h2>
+            <div class="toolbar">
+              <input type="search" id="search" placeholder="単語を検索（日本語・英語）" aria-label="単語を検索" />
+              <button type="button" class="btn" id="randomBtn">ランダムで組む</button>
+              <button type="button" class="btn" id="clearBtn">全部外す</button>
+            </div>
+            <p class="no-hit" id="noHit">一致する単語がありません。</p>
+            <div id="categories"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="h-custom">
+            <h2 id="h-custom">カスタム単語を追加</h2>
+            <div class="row2">
+              <div class="field">
+                <label for="customJa">日本語ラベル</label>
+                <input type="text" id="customJa" placeholder="例：ガラスの靴" />
+              </div>
+              <div class="field">
+                <label for="customEn">英語フレーズ</label>
+                <input type="text" id="customEn" placeholder="例：glass slippers" />
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:0">
+              <button type="button" class="btn" id="addCustom">カスタム単語として追加</button>
+            </div>
+            <p class="hint" style="font-size:.8rem;color:var(--ink-soft)">追加した単語はこのページを開いている間だけ使えます。みんなで使える単語にしたい場合は、上部の「単語のリクエスト」からどうぞ。</p>
+          </section>
+
+          <section class="panel" aria-labelledby="h-compare">
+            <h2 id="h-compare">全形式で比較</h2>
+            <p style="margin:0 0 6px;font-size:.9rem;color:var(--ink-soft)">いまの選択を、5つの出力形式すべてで並べて表示します。同じ題材でも文法でどう変わるか試せます。</p>
+            <div id="compare"></div>
+          </section>
+        </div>
+
+        <div class="sticky">
+          <section class="panel" aria-labelledby="h-out">
+            <h2 id="h-out">出力</h2>
+            <div class="engines" id="engines" role="group" aria-label="出力形式"></div>
+            <p class="engine-note" id="engineNote"></p>
+
+            <div class="field">
+              <label for="subject">主題（自由入力・任意）</label>
+              <input type="text" id="subject" placeholder="例：a girl with long red hair" />
+              <p class="hint">英語で直接書けます。空欄なら単語チップだけで組み立てます。</p>
+            </div>
+
+            <div class="row2" id="paramRow">
+              <div class="field">
+                <label for="ar">アスペクト比</label>
+                <select id="ar">
+                  <option value="">指定なし</option>
+                  <option value="1:1">1:1（正方形）</option>
+                  <option value="4:5">4:5（縦・投稿向け）</option>
+                  <option value="3:4">3:4（縦）</option>
+                  <option value="2:3">2:3（縦長）</option>
+                  <option value="16:9">16:9（横長）</option>
+                  <option value="3:2">3:2（横）</option>
+                  <option value="9:16">9:16（縦・動画向け）</option>
+                </select>
+              </div>
+              <div class="field" id="stylizeField">
+                <label for="stylize">スタイライズ <span id="stylizeVal">100</span></label>
+                <input type="range" id="stylize" min="0" max="1000" step="50" value="100" />
+              </div>
+            </div>
+
+            <p class="output-label">プロンプト</p>
+            <div class="output-box" id="outMain"><span class="empty">単語を選ぶと、ここにプロンプトが組み上がります。</span></div>
+
+            <div id="negWrap">
+              <p class="output-label">ネガティブプロンプト（SD用）</p>
+              <div class="output-box" id="outNeg"></div>
+              <div class="field" style="margin-top:8px">
+                <label for="negEdit">ネガティブを編集</label>
+                <textarea id="negEdit">lowres, bad anatomy, bad hands, missing fingers, extra digits, worst quality, low quality, blurry, watermark, text</textarea>
+              </div>
+            </div>
+
+            <div class="btn-row">
+              <button type="button" class="btn primary" id="copyMain">プロンプトをコピー</button>
+              <button type="button" class="btn" id="copyNeg">ネガティブをコピー</button>
+              <span class="copied" id="copiedMsg" role="status"></span>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="h-sel">
+            <h2 id="h-sel">選択中の単語 <span class="count" id="selCount"></span></h2>
+            <p class="sel-empty" id="selEmpty">まだ選ばれていません。左のチップを押して追加してください。</p>
+            <ul class="sel-list" id="selList"></ul>
+            <p class="hint" style="font-size:.8rem;color:var(--ink-soft);margin:8px 0 0">↑↓で並び替えできます。並び順はそのままプロンプトの出力順になります。</p>
+          </section>
+
+          <section class="panel" aria-labelledby="h-preset">
+            <h2 id="h-preset">プリセット（このブラウザに保存）</h2>
+            <div class="field">
+              <label for="presetName">名前をつけて保存</label>
+              <input type="text" id="presetName" placeholder="例：海辺の夕方" />
+            </div>
+            <div class="btn-row" style="margin-top:0">
+              <button type="button" class="btn" id="savePreset">現在の選択を保存</button>
+              <span class="copied" id="presetMsg" role="status"></span>
+            </div>
+            <ul class="preset-list" id="presetList"></ul>
+          </section>
+        </div>
+      </div>
+
+      <footer class="note">
+        <section class="panel" aria-labelledby="h-grow">
+          <h2 id="h-grow">この工房の育て方</h2>
+          <p>語彙は <strong>words.json</strong> という1つのファイルで管理しています。このファイルを差し替えるだけで、単語の追加・修正がそのまま反映される仕組みです。</p>
+          <p>「こんな単語がほしい」という要望は <a href="https://github.com/asuberu1979/prompt-koubou/issues" target="_blank" rel="noopener">GitHub Issues</a> で受け付けています。採用された単語は words.json の更新として公開版に反映されます。</p>
+          <p>プリセットはお使いのブラウザの中だけに保存され、サーバーには送信されません。</p>
+        </section>
+      </footer>
+    </div>
+
+    <script>
+      "use strict";
+
+      /* 内蔵の汎用語彙（フォールバック）。正本は assets/words.json で、
+         読み込めた場合はそちらが優先されます。 */
+      var EMBEDDED_WORDS = {"categories":[{"form":"tag","id":"quality","label":"品質","words":[{"ja":"最高品質","phrase":"a masterpiece-quality illustration","tag":"masterpiece"},{"ja":"高精細","phrase":"rendered in fine detail","tag":"highly detailed"},{"ja":"きれいな線画","phrase":"with clean, crisp line art","tag":"clean lineart"},{"ja":"柔らかい塗り","phrase":"with soft, gentle shading","tag":"soft shading"},{"ja":"鮮やかな色彩","phrase":"in vibrant colors","tag":"vibrant colors"},{"ja":"映画のような質感","phrase":"with a cinematic feel","tag":"cinematic"},{"ja":"超高解像度","phrase":"in ultra-high resolution","tag":"8k, ultra-detailed"},{"ja":"公式アート風","phrase":"in a polished official-art style","tag":"official art"}]},{"form":"phrase","id":"subject","label":"被写体","words":[{"ja":"少女","phrase":"a young girl","tag":"1girl"},{"ja":"少年","phrase":"a young boy","tag":"1boy"},{"ja":"女性","phrase":"a woman","tag":"woman"},{"ja":"男性","phrase":"a man","tag":"man"},{"ja":"猫","phrase":"a cat","tag":"cat"},{"ja":"犬","phrase":"a dog","tag":"dog"},{"ja":"小鳥","phrase":"a small bird","tag":"small bird"},{"ja":"ロボット","phrase":"a robot","tag":"robot"},{"ja":"魔法使い","phrase":"a wizard","tag":"wizard"},{"ja":"騎士","phrase":"a knight","tag":"knight"},{"ja":"妖精","phrase":"a tiny fairy","tag":"fairy"},{"ja":"ドラゴン","phrase":"a dragon","tag":"dragon"}]},{"form":"tag","id":"appearance","label":"外見","words":[{"ja":"長い髪","phrase":"with long flowing hair","tag":"long hair"},{"ja":"短い髪","phrase":"with short hair","tag":"short hair"},{"ja":"ポニーテール","phrase":"with her hair in a ponytail","tag":"ponytail"},{"ja":"ツインテール","phrase":"with twin-tail hair","tag":"twintails"},{"ja":"三つ編み","phrase":"with a braided hairstyle","tag":"braid"},{"ja":"お団子ヘア","phrase":"with her hair in a bun","tag":"hair bun"},{"ja":"眼鏡","phrase":"wearing glasses","tag":"glasses"},{"ja":"大きな瞳","phrase":"with large expressive eyes","tag":"big eyes"},{"ja":"風になびく髪","phrase":"her hair streaming in the wind","tag":"hair blowing in the wind"}]},{"form":"tag","id":"outfit","label":"衣装","words":[{"ja":"制服","phrase":"wearing a school uniform","tag":"school uniform"},{"ja":"ワンピース","phrase":"wearing a one-piece dress","tag":"one-piece dress"},{"ja":"着物","phrase":"wearing a kimono","tag":"kimono"},{"ja":"メイド服","phrase":"wearing a maid outfit","tag":"maid outfit"},{"ja":"スーツ","phrase":"wearing a suit","tag":"business suit"},{"ja":"パーカー","phrase":"wearing a hoodie","tag":"hoodie"},{"ja":"ドレス","phrase":"wearing an elegant dress","tag":"elegant dress"},{"ja":"マフラー","phrase":"wearing a scarf","tag":"scarf"},{"ja":"麦わら帽子","phrase":"wearing a straw hat","tag":"straw hat"},{"ja":"リボン","phrase":"with a ribbon in her hair","tag":"hair ribbon"},{"ja":"エプロン","phrase":"wearing an apron","tag":"apron"}]},{"form":"tag","id":"expression","label":"表情","words":[{"ja":"笑顔","phrase":"with a bright smile","tag":"smiling"},{"ja":"微笑み","phrase":"with a gentle smile","tag":"gentle smile"},{"ja":"真剣な顔","phrase":"with a serious expression","tag":"serious expression"},{"ja":"驚いた顔","phrase":"with a surprised expression","tag":"surprised expression"},{"ja":"照れた顔","phrase":"blushing with embarrassment","tag":"blushing, embarrassed"},{"ja":"眠そうな顔","phrase":"with a sleepy expression","tag":"sleepy expression"},{"ja":"泣き顔","phrase":"with tears in her eyes","tag":"tearful expression"},{"ja":"ウィンク","phrase":"winking playfully","tag":"winking"},{"ja":"無表情","phrase":"with a calm, expressionless face","tag":"expressionless"}]},{"form":"phrase","id":"pose","label":"ポーズ・動作","words":[{"ja":"立っている","phrase":"standing","tag":"standing"},{"ja":"座っている","phrase":"sitting down","tag":"sitting"},{"ja":"歩いている","phrase":"walking along","tag":"walking"},{"ja":"走っている","phrase":"running","tag":"running"},{"ja":"本を読んでいる","phrase":"reading a book","tag":"reading a book"},{"ja":"手を振っている","phrase":"waving her hand","tag":"waving hand"},{"ja":"空を見上げている","phrase":"looking up at the sky","tag":"looking up at the sky"},{"ja":"踊っている","phrase":"dancing gracefully","tag":"dancing"},{"ja":"振り返っている","phrase":"looking back over her shoulder","tag":"looking back over shoulder"},{"ja":"ジャンプしている","phrase":"jumping joyfully","tag":"jumping"},{"ja":"手を伸ばしている","phrase":"reaching out a hand","tag":"reaching out a hand"}]},{"form":"phrase","id":"place","label":"場所・背景","words":[{"ja":"教室","phrase":"in a classroom","tag":"classroom"},{"ja":"図書館","phrase":"in a quiet library","tag":"library"},{"ja":"カフェ","phrase":"in a cozy cafe","tag":"cafe interior"},{"ja":"街並み","phrase":"on a city street","tag":"city street"},{"ja":"神社","phrase":"at a shrine in the woods","tag":"shinto shrine"},{"ja":"森の中","phrase":"deep in a green forest","tag":"forest"},{"ja":"海辺","phrase":"by the seaside","tag":"seaside"},{"ja":"山頂","phrase":"on a mountain summit","tag":"mountain summit"},{"ja":"駅のホーム","phrase":"on a station platform","tag":"station platform"},{"ja":"屋上","phrase":"on a rooftop","tag":"rooftop"},{"ja":"異世界の街","phrase":"in a fantasy town","tag":"fantasy town"},{"ja":"宇宙","phrase":"floating in outer space","tag":"outer space"},{"ja":"花畑","phrase":"in a field of flowers","tag":"flower field"},{"ja":"古い洋館","phrase":"in an old western-style mansion","tag":"old mansion"}]},{"form":"phrase","id":"nature","label":"空・天気・季節","words":[{"ja":"青空","phrase":"under a clear blue sky","tag":"blue sky"},{"ja":"夕焼け空","phrase":"under a glowing sunset sky","tag":"sunset sky"},{"ja":"星空","phrase":"under a starry sky","tag":"starry sky"},{"ja":"満月","phrase":"under a full moon","tag":"full moon"},{"ja":"雨","phrase":"in gentle rain","tag":"rain"},{"ja":"雪","phrase":"in falling snow","tag":"snowfall"},{"ja":"桜","phrase":"surrounded by cherry blossoms","tag":"cherry blossoms"},{"ja":"紅葉","phrase":"among autumn leaves","tag":"autumn leaves"},{"ja":"虹","phrase":"with a rainbow in the sky","tag":"rainbow"},{"ja":"雲海","phrase":"above a sea of clouds","tag":"sea of clouds"}]},{"form":"phrase","id":"light","label":"光","words":[{"ja":"朝の光","phrase":"in soft morning light","tag":"morning light"},{"ja":"夕日の光","phrase":"in warm golden-hour light","tag":"golden hour light"},{"ja":"月明かり","phrase":"under gentle moonlight","tag":"moonlight"},{"ja":"木漏れ日","phrase":"in dappled sunlight through the leaves","tag":"dappled sunlight"},{"ja":"逆光","phrase":"backlit by a soft glow","tag":"backlighting"},{"ja":"柔らかい光","phrase":"in soft, diffused light","tag":"soft lighting"},{"ja":"ランタンの灯り","phrase":"lit by warm lantern light","tag":"lantern light"},{"ja":"窓辺の光","phrase":"in light from a window","tag":"window light"},{"ja":"きらめく光の粒","phrase":"with sparkling particles of light in the air","tag":"sparkling light particles"}]},{"form":"phrase","id":"color","label":"色・トーン","words":[{"ja":"暖色系","phrase":"in a warm color palette","tag":"warm color palette"},{"ja":"寒色系","phrase":"in a cool color palette","tag":"cool color palette"},{"ja":"パステルカラー","phrase":"in soft pastel colors","tag":"pastel colors"},{"ja":"モノクロ","phrase":"in monochrome","tag":"monochrome"},{"ja":"深い色合い","phrase":"in deep, rich colors","tag":"deep rich colors"},{"ja":"淡い色合い","phrase":"in pale, delicate colors","tag":"pale colors"},{"ja":"夕暮れ色","phrase":"in dusk tones","tag":"dusk tones"}]},{"form":"phrase","id":"style","label":"スタイル・画風","words":[{"ja":"アニメ風","phrase":"in anime style","tag":"anime style"},{"ja":"水彩風","phrase":"in a watercolor painting style","tag":"watercolor style"},{"ja":"油絵風","phrase":"in an oil painting style","tag":"oil painting style"},{"ja":"ピクセルアート","phrase":"as pixel art","tag":"pixel art"},{"ja":"写真風","phrase":"in a photorealistic style","tag":"photorealistic"},{"ja":"絵本風","phrase":"in a picture-book illustration style","tag":"picture book style"},{"ja":"浮世絵風","phrase":"in a ukiyo-e woodblock style","tag":"ukiyo-e style"},{"ja":"レトロ","phrase":"in a retro style","tag":"retro style"},{"ja":"ミニマル","phrase":"in a minimalist style","tag":"minimalist style"},{"ja":"厚塗り","phrase":"with rich impasto brushwork","tag":"impasto painting"}]},{"form":"tag","id":"composition","label":"構図・カメラ","words":[{"ja":"全身","phrase":"shown in full body","tag":"full body"},{"ja":"上半身","phrase":"shown from the waist up","tag":"upper body"},{"ja":"顔のアップ","phrase":"a close-up of the face","tag":"close-up of face"},{"ja":"広角","phrase":"in a wide shot","tag":"wide shot"},{"ja":"ローアングル","phrase":"seen from a low angle","tag":"low angle"},{"ja":"ハイアングル","phrase":"seen from a high angle","tag":"high angle"},{"ja":"俯瞰","phrase":"in a bird's-eye view","tag":"bird's-eye view"},{"ja":"被写界深度","phrase":"with a shallow depth of field","tag":"depth of field"},{"ja":"余白のある構図","phrase":"with generous negative space","tag":"negative space"}]},{"form":"phrase","id":"mood","label":"雰囲気","words":[{"ja":"静かな雰囲気","phrase":"a quiet, peaceful atmosphere","tag":"quiet atmosphere"},{"ja":"幻想的","phrase":"a dreamlike, fantastical mood","tag":"dreamlike, fantastical"},{"ja":"ノスタルジック","phrase":"a nostalgic mood","tag":"nostalgic"},{"ja":"爽やか","phrase":"a fresh, airy feeling","tag":"fresh and airy"},{"ja":"神秘的","phrase":"a mysterious atmosphere","tag":"mysterious atmosphere"},{"ja":"温かい","phrase":"a warm, cozy feeling","tag":"warm and cozy"},{"ja":"切ない","phrase":"a wistful, melancholic mood","tag":"melancholic"},{"ja":"壮大","phrase":"an epic sense of scale","tag":"epic scale"},{"ja":"楽しい","phrase":"a cheerful, joyful mood","tag":"cheerful mood"}]},{"form":"tag","id":"motif","label":"モチーフ・小物","words":[{"ja":"本","phrase":"holding a book","tag":"book"},{"ja":"傘","phrase":"holding an umbrella","tag":"umbrella"},{"ja":"花束","phrase":"holding a bouquet of flowers","tag":"bouquet of flowers"},{"ja":"ランタン","phrase":"holding a small lantern","tag":"lantern"},{"ja":"鍵","phrase":"holding an antique key","tag":"antique key"},{"ja":"羽根","phrase":"with feathers drifting in the air","tag":"feathers"},{"ja":"シャボン玉","phrase":"with soap bubbles floating around","tag":"soap bubbles"},{"ja":"紙飛行機","phrase":"with a paper airplane flying by","tag":"paper airplane"},{"ja":"懐中時計","phrase":"holding a pocket watch","tag":"pocket watch"},{"ja":"音符","phrase":"with musical notes floating in the air","tag":"musical notes"},{"ja":"蝶","phrase":"with butterflies fluttering around","tag":"butterflies"}]}],"note":"プロンプト工房の語彙データ。単語の追加・修正はこのファイルだけを差し替えれば反映されます。","updated":"2026-11-19","version":"1.0.0"};
+
+      var ENGINES = {
+        niji:     { label: "Niji",        note: "niji・journey 向け。フレーズをカンマでつなぎ、末尾に --niji 6 とパラメータを付けます。" },
+        mid:      { label: "Midjourney",  note: "Midjourney 向け。フレーズをカンマでつなぎ、末尾に --v 6.1 とパラメータを付けます。" },
+        sd:       { label: "SD",          note: "Stable Diffusion 向け。短いタグ列で出力し、ネガティブプロンプトを別枠で用意します。" },
+        bing:     { label: "Bing",        note: "Bing Image Creator（DALL·E系）向け。パラメータなしの自然な文章で出力します。" },
+        hybrid:   { label: "ハイブリッド", note: "被写体まわりはSD式タグ、空気感はフレーズで書く混合形式です。" }
+      };
+
+      var state = {
+        data: null,
+        engine: "niji",
+        selected: [],   /* [{catId, ja, tag, phrase, form}] 選択順＝出力順 */
+        customSeq: 0
+      };
+
+      function $(id) { return document.getElementById(id); }
+
+      function wordKey(w) { return w.catId + "::" + w.ja; }
+      function isSelected(w) {
+        var k = wordKey(w);
+        return state.selected.some(function (s) { return wordKey(s) === k; });
+      }
+
+      /* ---------- 語彙の読み込み ---------- */
+      function flatten(data) {
+        var words = [];
+        data.categories.forEach(function (c) {
+          c.words.forEach(function (w) {
+            words.push({ catId: c.id, catLabel: c.label, form: c.form, ja: w.ja, tag: w.tag, phrase: w.phrase });
+          });
+        });
+        return words;
+      }
+
+      function loadWords() {
+        var urls = ["words.json", "assets/words.json"];
+        var i = 0;
+        function next() {
+          if (i >= urls.length) { useData(EMBEDDED_WORDS, "内蔵語彙"); return; }
+          var url = urls[i++];
+          fetch(url).then(function (r) {
+            if (!r.ok) throw new Error("http " + r.status);
+            return r.json();
+          }).then(function (j) {
+            if (!j || !j.categories) throw new Error("bad json");
+            useData(j, url);
+          }).catch(next);
+        }
+        next();
+      }
+
+      function useData(data, source) {
+        state.data = data;
+        var n = flatten(data).length;
+        $("vocabStatus").textContent =
+          "語彙データ：" + (source === "内蔵語彙" ? "内蔵の初期語彙を使用中" : "words.json を読み込みました") +
+          "（全" + n + "語・" + data.categories.length + "カテゴリ／" + (data.updated || "") + "版）" +
+          "。更新は words.json の差し替えだけで反映されます。";
+        $("wordCount").textContent = "全" + n + "語";
+        renderCategories("");
+        renderAll();
+      }
+
+      /* ---------- カテゴリとチップ ---------- */
+      function renderCategories(filter) {
+        var box = $("categories");
+        box.innerHTML = "";
+        var q = (filter || "").trim().toLowerCase();
+        var anyHit = false;
+        state.data.categories.forEach(function (c, ci) {
+          var words = c.words.filter(function (w) {
+            if (!q) return true;
+            return w.ja.toLowerCase().indexOf(q) >= 0 || w.tag.toLowerCase().indexOf(q) >= 0 || w.phrase.toLowerCase().indexOf(q) >= 0;
+          });
+          if (!words.length) return;
+          anyHit = true;
+          var det = document.createElement("details");
+          det.className = "cat";
+          if (ci === 0 || q) det.open = true;
+          var sum = document.createElement("summary");
+          sum.innerHTML = "";
+          sum.appendChild(document.createTextNode(c.label));
+          var n = document.createElement("span");
+          n.className = "n"; n.textContent = words.length + "語";
+          sum.appendChild(n);
+          det.appendChild(sum);
+          var chips = document.createElement("div");
+          chips.className = "chips";
+          words.forEach(function (w) {
+            var flat = { catId: c.id, catLabel: c.label, form: c.form, ja: w.ja, tag: w.tag, phrase: w.phrase };
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "chip";
+            b.setAttribute("aria-pressed", isSelected(flat) ? "true" : "false");
+            b.dataset.key = wordKey(flat);
+            var ja = document.createElement("span"); ja.textContent = w.ja;
+            var en = document.createElement("span"); en.className = "en"; en.textContent = w.tag;
+            b.appendChild(ja); b.appendChild(en);
+            b.addEventListener("click", function () { toggleWord(flat); });
+            chips.appendChild(b);
+          });
+          det.appendChild(chips);
+          box.appendChild(det);
+        });
+        $("noHit").style.display = anyHit ? "none" : "block";
+      }
+
+      function refreshChips() {
+        var chips = document.querySelectorAll(".chip");
+        chips.forEach(function (b) {
+          var on = state.selected.some(function (s) { return wordKey(s) === b.dataset.key; });
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+      }
+
+      function toggleWord(flat) {
+        var k = wordKey(flat);
+        var idx = state.selected.findIndex(function (s) { return wordKey(s) === k; });
+        if (idx >= 0) state.selected.splice(idx, 1);
+        else state.selected.push(flat);
+        refreshChips();
+        renderAll();
+      }
+
+      /* ---------- 出力の組み立て ---------- */
+      function subjectText() { return $("subject").value.trim(); }
+
+      function buildFor(engine) {
+        var sel = state.selected;
+        var subj = subjectText();
+        var parts = [];
+        var i, w;
+
+        if (engine === "sd") {
+          if (subj) parts.push(subj);
+          for (i = 0; i < sel.length; i++) parts.push(sel[i].tag);
+          return parts.join(", ");
+        }
+        if (engine === "bing") {
+          var phrases = [];
+          if (subj) phrases.push(subj);
+          for (i = 0; i < sel.length; i++) phrases.push(sel[i].phrase);
+          if (!phrases.length) return "";
+          var s = phrases.join(", ");
+          s = s.charAt(0).toUpperCase() + s.slice(1);
+          return s + ".";
+        }
+        if (engine === "hybrid") {
+          var tags = [], phr = [];
+          if (subj) tags.push(subj);
+          for (i = 0; i < sel.length; i++) {
+            w = sel[i];
+            if (w.form === "phrase") phr.push(w.phrase); else tags.push(w.tag);
+          }
+          return tags.concat(phr).join(", ");
+        }
+        /* niji / mid */
+        if (subj) parts.push(subj);
+        for (i = 0; i < sel.length; i++) parts.push(sel[i].phrase);
+        var out = parts.join(", ");
+        var ar = $("ar").value;
+        var st = $("stylize").value;
+        var params = [];
+        if (engine === "niji") params.push("--niji 6"); else params.push("--v 6.1");
+        if (ar) params.push("--ar " + ar);
+        if (st && Number(st) !== 100) params.push("--s " + st);
+        if (out) out += " " + params.join(" ");
+        return out;
+      }
+
+      function renderOutput() {
+        var out = buildFor(state.engine);
+        var box = $("outMain");
+        if (out) box.textContent = out;
+        else box.innerHTML = '<span class="empty">単語を選ぶと、ここにプロンプトが組み上がります。</span>';
+        var isSd = state.engine === "sd";
+        $("negWrap").style.display = isSd ? "" : "none";
+        $("copyNeg").style.display = isSd ? "" : "none";
+        $("outNeg").textContent = $("negEdit").value.trim();
+        $("stylizeField").style.display = (state.engine === "niji" || state.engine === "mid") ? "" : "none";
+        $("engineNote").textContent = ENGINES[state.engine].note;
+      }
+
+      function renderSelected() {
+        var list = $("selList");
+        list.innerHTML = "";
+        $("selEmpty").style.display = state.selected.length ? "none" : "";
+        $("selCount").textContent = state.selected.length ? state.selected.length + "語" : "";
+        state.selected.forEach(function (w, idx) {
+          var li = document.createElement("li");
+          var cat = document.createElement("span"); cat.className = "cat"; cat.textContent = w.catLabel || "";
+          var ja = document.createElement("span"); ja.className = "ja"; ja.textContent = w.ja;
+          var en = document.createElement("span"); en.className = "en"; en.textContent = w.tag;
+          li.appendChild(cat); li.appendChild(ja); li.appendChild(en);
+          [["↑", -1, "上へ移動"], ["↓", 1, "下へ移動"]].forEach(function (cfg) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "icon-btn"; b.textContent = cfg[0];
+            b.setAttribute("aria-label", w.ja + " を" + cfg[2]);
+            b.addEventListener("click", function () {
+              var j = idx + cfg[1];
+              if (j < 0 || j >= state.selected.length) return;
+              var t = state.selected[idx]; state.selected[idx] = state.selected[j]; state.selected[j] = t;
+              renderAll();
+            });
+            li.appendChild(b);
+          });
+          var rm = document.createElement("button");
+          rm.type = "button"; rm.className = "icon-btn"; rm.textContent = "×";
+          rm.setAttribute("aria-label", w.ja + " を外す");
+          rm.addEventListener("click", function () {
+            state.selected.splice(idx, 1);
+            refreshChips();
+            renderAll();
+          });
+          li.appendChild(rm);
+          list.appendChild(li);
+        });
+      }
+
+      function renderCompare() {
+        var box = $("compare");
+        box.innerHTML = "";
+        Object.keys(ENGINES).forEach(function (key) {
+          var item = document.createElement("div");
+          item.className = "compare-item";
+          var h = document.createElement("h3");
+          h.appendChild(document.createTextNode(ENGINES[key].label));
+          var cp = document.createElement("button");
+          cp.type = "button"; cp.className = "btn small"; cp.textContent = "コピー";
+          cp.addEventListener("click", function () { copyText(buildFor(key), $("copiedMsg")); });
+          h.appendChild(cp);
+          var pre = document.createElement("div");
+          pre.className = "output-box";
+          var out = buildFor(key);
+          if (out) pre.textContent = out;
+          else pre.innerHTML = '<span class="empty">（未選択）</span>';
+          item.appendChild(h); item.appendChild(pre);
+          box.appendChild(item);
+        });
+      }
+
+      function renderAll() { renderOutput(); renderSelected(); renderCompare(); }
+
+      /* ---------- コピー ---------- */
+      function copyText(text, msgEl) {
+        function done() {
+          if (msgEl) { msgEl.textContent = "コピーしました"; setTimeout(function () { msgEl.textContent = ""; }, 1800); }
+        }
+        if (!text) { if (msgEl) msgEl.textContent = "コピーする内容がありません"; return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
+        } else fallback();
+        function fallback() {
+          var ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); done(); } catch (e) { if (msgEl) msgEl.textContent = "コピーできませんでした"; }
+          document.body.removeChild(ta);
+        }
+      }
+
+      /* ---------- プリセット（localStorage） ---------- */
+      var LS_KEY = "prompt-koubou-presets-v1";
+      function loadPresets() {
+        try { var v = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); return Array.isArray(v) ? v : []; }
+        catch (e) { return []; }
+      }
+      function savePresets(list) {
+        try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch (e) {}
+      }
+      function renderPresets() {
+        var list = loadPresets();
+        var ul = $("presetList");
+        ul.innerHTML = "";
+        list.forEach(function (p, idx) {
+          var li = document.createElement("li");
+          var name = document.createElement("span"); name.className = "name"; name.textContent = p.name;
+          var meta = document.createElement("span"); meta.className = "meta";
+          meta.textContent = (ENGINES[p.engine] ? ENGINES[p.engine].label : p.engine) + "／" + p.selected.length + "語";
+          var load = document.createElement("button");
+          load.type = "button"; load.className = "btn small"; load.textContent = "読む";
+          load.addEventListener("click", function () {
+            state.engine = p.engine || "niji";
+            state.selected = p.selected.slice();
+            $("subject").value = p.subject || "";
+            $("ar").value = p.ar || "";
+            $("stylize").value = p.stylize || 100;
+            $("stylizeVal").textContent = $("stylize").value;
+            renderEngines(); refreshChips(); renderAll();
+          });
+          var del = document.createElement("button");
+          del.type = "button"; del.className = "icon-btn"; del.textContent = "×";
+          del.setAttribute("aria-label", p.name + " を削除");
+          del.addEventListener("click", function () {
+            var l = loadPresets(); l.splice(idx, 1); savePresets(l); renderPresets();
+          });
+          li.appendChild(name); li.appendChild(meta); li.appendChild(load); li.appendChild(del);
+          ul.appendChild(li);
+        });
+      }
+
+      /* ---------- エンジン切替 ---------- */
+      function renderEngines() {
+        var box = $("engines");
+        box.innerHTML = "";
+        Object.keys(ENGINES).forEach(function (key) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.textContent = ENGINES[key].label;
+          b.setAttribute("aria-pressed", state.engine === key ? "true" : "false");
+          b.addEventListener("click", function () { state.engine = key; renderEngines(); renderOutput(); });
+          box.appendChild(b);
+        });
+      }
+
+      /* ---------- イベント ---------- */
+      function init() {
+        renderEngines();
+        renderPresets();
+        loadWords();
+
+        $("search").addEventListener("input", function () { if (state.data) renderCategories(this.value); refreshChips(); });
+        $("subject").addEventListener("input", renderAll);
+        $("ar").addEventListener("change", renderAll);
+        $("stylize").addEventListener("input", function () { $("stylizeVal").textContent = this.value; renderAll(); });
+        $("negEdit").addEventListener("input", renderOutput);
+
+        $("copyMain").addEventListener("click", function () { copyText(buildFor(state.engine), $("copiedMsg")); });
+        $("copyNeg").addEventListener("click", function () { copyText($("negEdit").value.trim(), $("copiedMsg")); });
+
+        $("clearBtn").addEventListener("click", function () {
+          state.selected = []; refreshChips(); renderAll();
+        });
+
+        $("randomBtn").addEventListener("click", function () {
+          if (!state.data) return;
+          var pick = function (catId) {
+            var c = state.data.categories.find(function (x) { return x.id === catId; });
+            if (!c) return null;
+            var w = c.words[Math.floor(Math.random() * c.words.length)];
+            return { catId: c.id, catLabel: c.label, form: c.form, ja: w.ja, tag: w.tag, phrase: w.phrase };
+          };
+          var seq = ["subject", "appearance", "outfit", "expression", "pose", "place", "nature", "light", "style", "mood"];
+          state.selected = seq.map(pick).filter(Boolean);
+          refreshChips(); renderAll();
+        });
+
+        $("addCustom").addEventListener("click", function () {
+          var ja = $("customJa").value.trim();
+          var en = $("customEn").value.trim();
+          if (!ja || !en) return;
+          state.customSeq++;
+          state.selected.push({ catId: "custom" + state.customSeq, catLabel: "カスタム", form: "phrase", ja: ja, tag: en, phrase: en });
+          $("customJa").value = ""; $("customEn").value = "";
+          renderAll();
+        });
+
+        $("savePreset").addEventListener("click", function () {
+          var name = $("presetName").value.trim();
+          var msg = $("presetMsg");
+          if (!name) { msg.textContent = "名前を入れてください"; return; }
+          if (!state.selected.length && !subjectText()) { msg.textContent = "先に単語を選んでください"; return; }
+          var list = loadPresets();
+          list.push({
+            name: name, engine: state.engine, subject: subjectText(),
+            ar: $("ar").value, stylize: $("stylize").value,
+            selected: state.selected.slice()
+          });
+          savePresets(list);
+          $("presetName").value = "";
+          msg.textContent = "保存しました";
+          setTimeout(function () { msg.textContent = ""; }, 1800);
+          renderPresets();
+        });
+
+        $("dlWords").addEventListener("click", function () {
+          if (!state.data) return;
+          var blob = new Blob([JSON.stringify(state.data, null, 2)], { type: "application/json" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "words.json";
+          document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
